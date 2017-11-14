@@ -1,0 +1,596 @@
+//Segue o exemplo
+//inicio declarações
+
+use NFePHP\DA\NFe\Danfe;
+use NFePHP\NFe\Tools;
+use NFePHP\Common\Certificate;
+use NFePHP\Common\Soap\SoapCurl;
+use NFePHP\NFe\Make;
+use NFePHP\Common\Signer;
+use NFePHP\Common\Validator;
+use NFePHP\NFe\Common\Standardize;
+use NFePHP\NFe\Complements;
+
+
+//fim declarações
+
+//inicio gerar nota fiscal completa
+
+$nfe = new Make();
+$std = new stdClass();
+
+//Inicio node principal
+
+$std->versao = '4.00'; //versão do layout
+$std->Id = null;//se o Id de 44 digitos não for passado será gerado automaticamente
+$std->pk_nItem = null; //deixe essa variavel sempre como NULL
+
+$elem = $nfe->taginfNFe($std);
+
+//fim node principal
+
+//inicio node identificação
+$std = new stdClass();
+$std->cUF = 33; //Código da UF do emitente do Documento Fiscal
+$std->cNF = '84846565'; //Código numérico que compõe a Chave de Acesso. Número aleatório gerado pelo emitente para cada NF-e para evitar acessos indevidos da NF-e. 8 digitos
+$std->natOp = 'VENDA';
+
+// $std->indPag = '0'; //NÃO EXISTE MAIS NA VERSÃO 4.00 
+
+$std->mod = '55';
+$std->serie = '1';
+$std->nNF = '4';
+$std->dhEmi = '2017-11-13T14:36:02-02:00';
+$std->dhSaiEnt = '2017-11-13T14:36:02-02:00'; //Data e Hora de Saída da Mercadoria/Produto. No caso da NF de entrada, esta é a Data e Hora de entrada.
+$std->tpNF = '1'; //Tipo de Operação da NF-e: 0 - entrada e 1 - saída.
+$std->idDest = '1'; //Identificador de local de destino da operação: 1- Operação interna 2- Operação interestadual 3- Operação com exterior 
+$std->cMunFG = '3127701'; //Código do Município de Ocorrência do Fator Gerador 
+$std->tpImp = '1'; //Formato do DANFE: 1-DANFE normal , Retrato ; 4-DANFE NFC-e; 5-DANFE NFC-e em mensagem eletrônica.
+$std->tpEmis = 1; //Tipo de Emissão: 1- Emissão normal (não em contingência); 3- Contingência SCAN (Sistema de Contingência do Ambiente Nacional); 
+$std->cDV = '2'; //Dígito Verificador da Chave de Acesso da NF-e
+$std->tpAmb = 2; //Identificação de Ambiente: 1 - Produção, 2 - Homologação.
+$std->finNFe = '1'; //Finalidade de emissão da NF-e: 1 - NF-e normal, 2 - NF-e complementar, 3 - NF-e de ajuste.
+$std->indFinal = '1'; // Indica operação com Consumidor fina: 0- Não;1- Consumidor final; 
+$std->indPres = '2'; //Indicador de presença do comprador no estabelecimento comercial no momento da operação: 0- Não se aplica (por exemplo, Nota Fiscal complementar ou de ajuste); 1- Operação presencial; 2- Operação não presencial, pela Internet; 
+$std->procEmi = '0'; //Identificador do processo de emissão da NF-e:  0 - emissão de NF-e com aplicativo do contribuinte; 
+$std->verProc = '1.0'; //versão do aplicativo de emição da nota fiscal eletrônica
+//estes dois somente quano entra em contingência.
+$std->dhCont = null; //Data e Hora da entrada em contingência 
+$std->xJust = null; //Justificativa da entrada em contingência
+
+$elem = $nfe->tagide($std);
+
+// fim node identificação
+
+//inicio node dados do emitente
+$std = new stdClass();
+
+$std->xNome = 'mario LTDA'; //razão social
+$std->xFant = 'Mario games'; //fantasia
+$std->IE = ''; //Inscrição estadual
+// $std->IEST = ''; //deve ser preenchido quando o emitente tiver inscrição de substituto tributário no estado em que a mercadoria será destinada
+// $std->IM = (isset($config->im))?str_replace($caracteresretirar, '',$config->im):'';
+// $std->CNAE = 4761003; // CNAE
+$std->CRT = '1';//código de regime tributario 1 simples, simples excesso de sublimite da receita bruta, 3 normal
+$std->CNPJ = ''; //indicar apenas um CNPJ ou CPF
+// $std->CPF = '';
+
+$elem = $nfe->tagemit($std);
+
+//fim node dados do emitente
+
+
+//inicio Node com o endereço do emitente
+$std = new stdClass();
+$std->xLgr = ''; //endeço do emitente
+$std->nro = ''; // numero do endeço do emitente
+$std->xCpl = ''; // complemento do endereço
+$std->xBairro = ''; //bairro
+$std->cMun = ''; //cod municipio ibge
+$std->xMun = ''; //municipio do emitente
+$std->UF = ''; //UF do emitente
+$std->CEP = ''; //CEP do emitente
+$std->cPais = '1058';
+$std->xPais = 'Brasil';
+$std->fone = ''; //telefone do emitente
+
+$elem = $nfe->tagenderEmit($std);
+
+//fim Node com o endereço do emitente
+
+//inicio Node com os dados do destinatário
+$std = new stdClass();
+$std->xNome = 'Sandro lopes';
+$std->indIEDest = '9'; //Indicador da IE do Destinatário: digitar a ie do destinatario ou 9 para isento
+$std->IE = '';
+$std->ISUF = ''; // informar caso tenha suframa.
+$std->IM = '';
+$std->email = 'chupisco@gmail.com';
+$std->CNPJ = ''; //indicar apenas um CNPJ ou CPF ou idEstrangeiro
+$std->CPF = ''; 
+$std->idEstrangeiro = '';
+
+$elem = $nfe->tagdest($std);
+
+//fim Node com os dados do destinatário
+
+//inicio Node de endereço do destinatário
+$std = new stdClass();
+$std->xLgr = 'Rua k';
+$std->nro = '2500';
+$std->xCpl = ''; // complemento do endereço
+$std->xBairro = 'centro';
+$std->cMun = '3127701';
+$std->xMun = 'Marilac';
+$std->UF = 'MG';
+$std->CEP = '35051555';
+$std->cPais = '1058';
+$std->xPais = 'Brasil';
+$std->fone = '3330163354';
+
+
+$elem = $nfe->tagenderDest($std);
+
+//fim Node de endereço do destinatário
+
+//inicio node endereço de entrega caso seja diferente do destinatário
+// $std = new stdClass();
+// $std->xLgr;
+// $std->nro;
+// $std->xCpl;
+// $std->xBairro;
+// $std->cMun;
+// $std->xMun;
+// $std->UF;
+// $std->CNPJ; //indicar um CNPJ ou CPF
+// $std->CPF = null;
+
+// $elem = $nfe->tagentrega($std);
+//fim node endereço de entrega caso seja diferente do destinatário
+
+
+
+
+//inicio Node de registro de pessoas autorizadas a acessar a NFe
+	$std = new stdClass();
+	$std->CNPJ = null; //indicar um CNPJ ou CPF
+	$std->CPF = '06610842647';
+	$elem = $nfe->tagautXML($std);
+
+//Fim Node de registro de pessoas autorizadas a acessar a NFe
+
+
+//inicio Node de dados do produto/serviço
+$std = new stdClass();
+	$std->item = '1' ; //item da NFe
+	$std->cProd = '56';
+	$std->cEAN = '7896030801822';
+	$std->xProd = 'Fichário da Mel colorido';
+	$std->NCM = '83040000';
+
+	// $std->cBenf = ''; //incluido no layout 4.00
+	$std->cBenef = '';  //Código de Benefício Fiscal na UF aplicado ao item Código de Benefício Fiscal utilizado pela UF, aplicado ao item. Obs.: Deve ser utilizado o mesmo código adotado na EFD e outras declarações, nas UF que o exigem.
+
+	$std->EXTIPI = ''; //Preencher de acordo com o código EX da TIPI. Em caso de serviço, não incluir a TAG.
+	$std->CFOP = '5102';
+	$std->uCom = 'Un';
+	$std->qCom = '1';
+	$std->vUnCom = '80.00';
+	$std->vProd = '80.00';
+	$std->cEANTrib = '';
+	$std->uTrib = 'Un';
+	$std->qTrib = '1' ;
+	$std->vUnTrib = '80.00';
+	$std->vFrete = '';
+	$std->vSeg = '';
+	$std->vDesc = '';
+	$std->vOutro = '';
+	$std->indTot = '1';
+	// 0 - o valor do item (vProd) não compõe o valor total da NF-e (vProd)
+	// 1 - o valor do item (vProd) compõe o valor total da NF-e (vProd)
+	$std->xPed = '16'; // numero do pedido interno ex: pedido 1
+	$std->nItemPed = '1'; // codigo do item do pedido interno ex pedido 1 item 1
+	$std->nFCI = ''; //Ficha de conteúdo de importação
+
+	$elem = $nfe->tagprod($std);
+
+//fim Node de dados do produto/serviço
+
+
+//inicio Node de informações adicionais do produto
+		// $std = new stdClass();
+		// $std->item = 1; //item da NFe
+
+		// $std->infAdProd = 'me chupa que é de uva';
+
+		// $elem = $nfe->taginfAdProd($std);
+
+//fim Node de informações adicionais do produto
+
+
+//inicio Node de detalhamento do Especificador da Substituição Tributária do item da NFe
+
+	// $std->item = 1; //item da NFe
+	// $std->CEST;
+	// $std->indEscala; //incluido no layout 4.00
+	// $std->CNPJFab; //incluido no layout 4.00
+
+	// $elem = $nfe->tagCEST($std);
+
+//fim Node de detalhamento do Especificador da Substituição Tributária do item da NFe
+	
+
+//inicio Node inicial dos Tributos incidentes no Produto ou Serviço do item da NFe
+
+$std = new stdClass();
+	$std->item = '1'; //item da NFe
+	$std->vTotTrib = '0';
+
+	$elem = $nfe->tagimposto($std);
+
+//Fim Node inicial dos Tributos incidentes no Produto ou Serviço do item da NFe
+
+//inicio Node referente Tributação ICMS pelo Simples Nacional do item da NFe
+
+    $std = new stdClass();
+    $std->item = 1; //item da NFe
+    $std->orig = 0;
+    $std->CSOSN = '102';
+    $std->pCredSN = 0; //Alíquota aplicável de cálculo do crédito (Simples Nacional).
+    $std->vCredICMSSN = 0; //Valor crédito do ICMS que pode ser aproveitado nos termos do art. 23 da LC 123 (SIMPLES NACIONAL)
+    $std->modBCST = null; // Modalidade de determinação da BC do ICMS ST
+    $std->pMVAST = null; //Percentual da margem de valor Adicionado do ICMS ST
+    $std->pRedBCST = null; //Percentual da Redução de BC do ICMS ST
+    $std->vBCST = null; //Valor da BC do ICMS ST
+    $std->pICMSST = null; //Alíquota do imposto do ICMS ST
+    $std->vICMSST = null; //Valor do ICMS ST
+    $std->vBCSTRet = null; //Valor da BC do ICMS ST retido
+    $std->pST = null; //Alíquota suportada pelo Consumidor Final Deve ser informada a alíquota do cálculo do ICMS-ST, já incluso o FCP caso incida sobre a mercadoria. Exemplo: alíquota da mercadoria na venda ao consumidor final = 18% e 2% de FCP. A alíquota a ser informada no campo pST deve ser 20%.
+    $std->vICMSSTRet = null; //Valor do ICMS ST retido
+    $std->modBC = null; //Modalidade de determinação da BC do ICMS 0=Margem Valor Agregado (%); 1=Pauta (Valor); 2=Preço Tabelado Máx. (valor); 3=Valor da operação.
+    $std->vBC = null; //Valor da BC do ICMS
+    $std->pRedBC = null; //Percentual da Redução de BC do ICMS ST
+    $std->pICMS = null; //Alíquota do ICMS sem o FCP. Quando for o caso, informar a alíquota do FCP no campo pFCP
+    $std->vICMS = null; // Valor do ICMS
+
+    $elem = $nfe->tagICMSSN($std);
+
+//fim  Node referente Tributação ICMS pelo Simples Nacional do item da NFe
+
+//inicio Node com informações da partilha do ICMS entre a UF de origem e UF de destino ou a UF definida na legislação.
+
+	// $std->item = 1; //item da NFe
+	// $std->orig = 0;
+	// $std->CST = '90';
+	// $std->modBC = 0; //Modalidade de determinação da BC do ICMS 0=Margem Valor Agregado (%); 1=Pauta (Valor); 2=Preço Tabelado Máx. (valor); 3=Valor da operação.
+	// $std->vBC = ''; //Valor da BC do ICMS
+	// $std->pRedBC = null; //aliquota redução BC do ICMS
+	// $std->pICMS = 18.00; //Alíquota do imposto sem FECP fundo estadual de combate a pobreza
+	// $std->vICMS = 180.00; //valor icms
+	// $std->modBCST = ''; //Modalidade de determinação da BC do ICMS ST 0=Preço tabelado ou máximo sugerido; 1=Lista Negativa (valor);2=Lista Positiva (valor);3=Lista Neutra (valor);4=Margem Valor Agregado (%);5=Pauta (valor);
+	// $std->pMVAST = 40.00; //Percentual da margem de valor Adicionado do ICMS ST
+	// $std->pRedBCST = null; //Percentual da Redução de BC do ICMS ST
+	// $std->vBCST = 1400.00; //Valor da BC do ICMS ST
+	// $std->pICMSST = 10.00; //Alíquota do imposto do ICMS ST
+	// $std->vICMSST = 140.00; //Valor do ICMS ST
+	// $std->pBCOp = 10.00; //Percentual da BC operação própria
+	// $std->UFST = 'RJ'; //UF para qual é devido o ICMS ST
+
+	// $elem = $nfe->tagICMSPart($std);
+
+//fim Node com informações da partilha do ICMS entre a UF de origem e UF de destino ou a UF definida na legislação.
+
+//inicio Node Repasse de ICMS ST retido anteriormente em operações interestaduais com repasses através do Substituto Tributário
+
+	// $std->item = 1; //item da NFe
+	// $std->orig = 0;
+	// $std->CST = '60';
+	// $std->vBCSTRet = ' '; //Valor da BC do ICMS ST retido
+	// $std->vICMSSTRet = 190.00; //Valor do ICMS ST retido
+	// $std->vBCSTDest = ' '; //Valor da BC do ICMS ST da UF destino
+	// $std->vICMSSTDest = 1.00; //Valor do ICMS ST da UF destino
+
+	// $elem = $nfe->tagICMSSN($std);
+
+//fim Node Repasse de ICMS ST retido anteriormente em operações interestaduais com repasses através do Substituto Tributário
+	
+
+// inicio Node de informação do ICMS Interestadual do item na NFe
+
+	// $std->item = 1; //item da NFe
+	// $std->vBCUFDest = 100.00; //Valor da BC do ICMS na UF de destino
+	// $std->vBCFCPUFDest = 100.00; //Valor da BC FCP na UF de destino
+	// $std->pFCPUFDest = 1.00; //Percentual adicional inserido na alíquota interna da UF de destino, relativo ao Fundo de Combate à Pobreza (FCP) naquela UF. Nota: Percentual máximo de 2%, conforme a legislação
+	// $std->pICMSUFDest = 18.00; //Alíquota interna da UF de destino
+	// $std->pICMSInter = 12.00; //Alíquota interestadual das UF envolvidas
+	// $std->pICMSInterPart = 80.00; //Percentual provisório de partilha do ICMS Interestadual Percentual de ICMS Interestadual para a UF de destino: - 40% em 2016; etc...
+	// $std->vFCPUFDest = 1.00; //Valor do ICMS relativo ao Fundo de Combate à Pobreza (FCP) da UF de destino
+	// $std->vICMSUFDest = 14.44; //Valor do ICMS Interestadual para a UF de destino
+	// $std->vICMSFRemet = 3.56; //Valor do ICMS Interestadual para a UF do remetente
+
+	// $elem = $nfe->tagICMSUFDest($std);
+
+// fim Node de informação do ICMS Interestadual do item na NFe
+
+//inicio Node referente ao IPI do item da NFe
+
+	// $std->item = 1; //item da NFe
+	// $std->clEnq = null;
+	// $std->CNPJProd = null;
+	// $std->cSelo = null;
+	// $std->qSelo = null;
+	// $std->cEnq = '999'
+	// $std->CST = '50'
+	// $std->vIPI = 150.00;
+	// $std->vBC = ' ';
+	// $std->pIPI = 15.00;
+	// $std->qUnid = null;
+	// $std->vUnid = null;
+
+	// $elem = $nfe->tagIPI($std);
+
+//fim Node referente ao IPI do item da NFe
+
+
+//inicio Node PIS do item da NFe
+	$std = new stdClass();
+
+	$std->item = 1; //item da NFe
+	$std->CST = '07';
+	$std->vBC = null;
+	$std->pPIS = null;
+	$std->vPIS = null;
+	$std->qBCProd = null;
+	$std->vAliqProd = null;
+
+	$elem = $nfe->tagPIS($std);
+
+//fim Node PIS do item da NFe
+
+
+//inicio Node COFINS do item da NFe
+	$std = new stdClass();
+    $std->item = 1; //item da NFe
+    $std->CST = '07';
+    $std->vBC = null;
+    $std->pCOFINS = null;
+    $std->vCOFINS = null;
+    $std->qBCProd = null;
+    $std->vAliqProd = null;
+
+    $elem = $nfe->tagCOFINS($std);
+
+// fim Node COFINS do item da NFe
+
+
+
+//inicio Node dos totais referentes ao ICMS
+$std = new stdClass();
+	$std->vBC = '';
+	$std->vICMS = '';
+	$std->vICMSDesonv = '';
+	$std->vFCP = ''; //incluso no layout 4.00
+	$std->vBCST = '';
+	$std->vST = '';
+	$std->vFCPST = ''; //incluso no layout 4.00
+	$std->vFCPSTRet = ''; //incluso no layout 4.00
+	$std->vProd = '';
+	$std->vFrete = '';
+	$std->vSeg = '';
+	$std->vDesc = '';
+	$std->vII = '';
+	$std->vIPI = '';
+	$std->vIPIDevol = ''; //incluso no layout 4.00
+	$std->vPIS = '';
+	$std->vCOFINS = '';
+	$std->vOutro = '';
+	$std->vNF = '';
+	$std->vTotTrib = '';
+
+	$elem = $nfe->tagICMSTot($std);
+
+//fim Node dos totais referentes ao ICMS
+
+//inicio Node indicativo da forma de frete
+$std = new stdClass();
+$std->modFrete = 9;
+
+$elem = $nfe->tagtransp($std);
+
+//fim Node indicativo da forma de frete
+
+//inicio Node com os dados da fatura
+	$std = new stdClass();
+    $std->nFat = null;
+    $std->vOrig = null;
+    $std->vDesc = null;
+    $std->vLiq = null;
+
+    $elem = $nfe->tagfat($std);
+
+// fim Node com os dados da fatura
+
+//inicio Node referente as informações adicionais da NFe
+		$std = new stdClass();
+	$std->infAdFisco = 'informacoes para o fisco';
+	$std->infCpl = 'informacoes complementares';
+
+	$elem = $nfe->taginfAdic($std);
+//fim Node referente as informações adicionais da NFe
+
+//inicio 
+	$std = new stdClass();
+	$std->vTroco = null; //incluso no layout 4.00
+
+	$elem = $nfe->tagpag($std);
+// fim 
+
+
+// //inicio Node com o detalhamento da forma de pagamento OBRIGATÓRIO para NFCe
+	$std = new stdClass();
+	$std->tPag = '01'; //Forma de pagamento 01=Dinheiro 02=Cheque 03=Cartão de Crédito 04=Cartão de Débito 05=Crédito Loja 10=Vale Alimentação 11=Vale Refeição 12=Vale Presente  13=Vale Combustível 14=Duplicata Mercantil 99=Outros
+	$std->vPag = '80.00'; //valor pago
+	$std->CNPJ = '06610842647'; 
+	// $std->tBand = '01'; // bandeira do cartão de crédito 01=Visa 02=Mastercard 03=American Express 04=Sorocred 05=Diners Club 06=Elo07=Hipercard 08=Aura 09=Cabal 99=Outros
+	// $std->cAut = '3333333';
+
+	$std->tpIntegra = 1; //incluso no layout 4.00 Tipo de Integração para pagamento // 1 para integrado ao sistema
+
+	$elem = $nfe->tagdetPag($std);
+
+// //fim Node com o detalhamento da forma de pagamento OBRIGATÓRIO para NFCe
+
+	$result = $nfe->montaNFe();
+	$chave = $nfe->getChave();
+	$xml = $nfe->getXML();
+	// $result->store('xmlprimeiro');
+
+// assinatura do xml
+
+// $xml = "<aqui fica sua string XML que deverá ser assinada>";
+
+$tagname = 'infNFe'; //tag a ser assinada, 
+                     //se este campo for deixado vazio a tag raiz será assinada 
+
+$mark = 'Id'; //indica se a assinatura fará referencia a uma tag 
+              //com atributo de identificação definido,
+              //se for assinar a raiz do documento este campo deverá 
+              //ser deixado em branco 
+
+$algorithm = OPENSSL_ALGO_SHA1; //algoritimo de encriptação a ser usado
+
+$canonical = [true,false,null,null]; //veja função C14n do PHP
+
+$rootname = ''; //este campo indica em qual node a assinatura deverá ser inclusa
+
+try {
+
+    $pfx = file_get_contents(public_path('Certificado.pfx'));
+    $certificate = Certificate::readPfx($pfx, '32750836');
+
+    $signed = Signer::sign(
+        $certificate,
+        $xml,
+        $tagname,
+        $mark,
+        $algorithm,
+        $canonical,
+        $rootname
+    );
+    //$signed contêm o XML assinado
+    header('Content-type: text/xml; charset=UTF-8');
+    // echo $signed;
+    
+    $arquivos = public_path('/PL_009_V4/nfe_v4.00.xsd');
+    
+    try {
+
+    $resp = Validator::isValid($signed, $arquivos);
+    
+} catch (\Exception $e){
+    echo $e;
+}
+
+
+
+} catch (\Exception $e) {
+    //aqui você trata a exceção
+    echo $e->getMessage();
+}
+
+
+// echo $resp;
+
+    // $xml = Complements::toAuthorize($signed, $response);
+    // $retorno  = $tools->sefazEnviaLote([$signed], '111');
+
+    // echo $retorno;
+
+
+$arr = [
+    "atualizacao" => "2017-11-03 18:01:21",
+    "tpAmb" => 2,
+    "razaosocial" => "MEIA BOCA PRESENTES LTDA - ME",
+    "cnpj" => "6465465465456456",
+    "siglaUF" => "MG",
+    "schemes" => "PL_009_V4",
+    "versao" => '4.00',
+    "tokenIBPT" => "",
+    "CSC" => "",
+    "CSCid" => "",
+    "proxyConf" => [
+        "proxyIp" => "",
+        "proxyPort" => "",
+        "proxyUser" => "",
+        "proxyPass" => ""
+    ]   
+];
+//monta o config.json
+$configJson = json_encode($arr);
+//carrega o conteudo do certificado.
+$content = file_get_contents('/Certificado.pfx');
+
+    $tools = new Tools($configJson, Certificate::readPfx($content, 'senhacertificado'));
+
+// echo $signed;
+try{
+    $retorno  = $tools->sefazEnviaLote([$signed], '322112');
+}catch (\Exception $e) {
+  
+  echo $e->getMessage(), "<br>";
+
+}
+
+    $stdCl = new Standardize();
+
+	$respwebserver = $stdCl->toArray($retorno);
+    
+    
+
+    echo '<br>';
+    // echo $retorno;
+	echo $chave;
+
+	 $xx = $tools->sefazConsultaRecibo($respwebserver["infRec"]["nRec"]); //exemplo pegando os dados da resposta do webservice
+	// $xx = $tools->sefazConsultaRecibo('310000057474934');
+    echo '<br>';
+    echo $xx;
+    echo '<br>';
+    
+    echo $respwebserver["infRec"]["nRec"];
+
+
+    
+
+
+
+	$xml = Complements::toAuthorize($signed, $xx); // adicionar a autorizaço no XML 
+
+	echo '<br>';
+	$filename = "/xxxxx.xml"; //local para salvar o xml
+	
+
+	file_put_contents($filename ,$xml );
+	echo 'Imprimido';
+
+
+
+
+
+$xmlProt = "/xxxxx.xml";
+$docxml = file_get_contents($xmlProt);
+$pathLogo = "/logomarca.jpg";
+
+$danfe = new Danfe($docxml, 'P', 'A4', $pathLogo, 'I', '');
+$id = $danfe->montaDANFE();
+$pdf = $danfe->render();
+
+
+        $filename = "/bbb.pdf";
+        echo $filename;
+
+        file_put_contents($filename ,$pdf ); //salvou o PDF  endereço
+        echo 'Imprimido';
+
+
+//fim gerar nota fiscal completa
